@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go-banking/internal/handlers"
+	"go-banking/internal/middleware"
 	"go-banking/internal/repository"
 	"go-banking/internal/services"
 	"log"
@@ -14,6 +15,8 @@ import (
 func main() {
 
 	router := chi.NewRouter()
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recovery)
 
 	accountRepo := repository.NewAccountRepository()
 	transactionRepo := repository.NewTransactionRepository()
