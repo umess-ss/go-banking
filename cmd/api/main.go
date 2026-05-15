@@ -2,17 +2,21 @@ package main
 
 import (
 	"fmt"
+	"go-banking/internal/config"
 	"go-banking/internal/handlers"
 	"go-banking/internal/middleware"
 	"go-banking/internal/repository"
 	"go-banking/internal/services"
 	"go-banking/pkg/response"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
+
+	cfg := config.Load()
 
 	router := chi.NewRouter()
 
@@ -50,12 +54,12 @@ func main() {
 
 	router.Get("/transactions", transactionHandler.GetTransactions)
 
-	port := ":8080"
+	port := ":" + cfg.Port
 
 	fmt.Println("Go Banking API started on port", port)
 
 	err := http.ListenAndServe(port, router)
 	if err != nil {
-		response.WriteError(nil, http.StatusInternalServerError, "failed to start server: "+err.Error())
+		log.Fatalf("failed to start server: %v", err)
 	}
 }
