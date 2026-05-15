@@ -7,6 +7,7 @@ import (
 	"go-banking/internal/services"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -28,10 +29,27 @@ func main() {
 	})
 
 	mux.HandleFunc("/accounts/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		path := r.URL.Path
+
+		switch {
+		case r.Method == http.MethodGet:
 			accountHandler.GetAccountByID(w, r)
-		} else {
+		case r.Method == http.MethodPost && strings.HasSuffix(path, "/deposit"):
+			accountHandler.Deposit(w, r)
+		case r.Method == http.MethodPost && strings.HasSuffix(path, "/withdraw"):
+			accountHandler.Withdraw(w, r)
+		case r.Method == http.MethodPost && strings.HasSuffix(path, "/transfer"):
+			accountHandler.Transfer(w, r)
+		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/transfer", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		} else {
+			accountHandler.Transfer(w, r)
 		}
 	})
 

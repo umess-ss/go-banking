@@ -40,3 +40,13 @@ func (r *AccountRepository) Create(account models.Account) models.Account {
 	r.accounts = append(r.accounts, account)
 	return account
 }
+
+func (r *AccountRepository) Update(account models.Account) error {
+	for i := range r.accounts {
+		if r.accounts[i].ID == account.ID {
+			r.accounts[i] = account
+			return nil
+		}
+	}
+	return errors.New("account not found")
+}
