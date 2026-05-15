@@ -6,7 +6,8 @@ import (
 	"go-banking/internal/services"
 	"net/http"
 	"strconv"
-	"strings"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // handler for account-related HTTP requests. It uses the AccountService to perform business
@@ -29,7 +30,7 @@ func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *AccountHandler) GetAccountByID(w http.ResponseWriter, r *http.Request) {
-	id, err := getIDFromPath(r.URL.Path)
+	id, err := getAccountIDFromRouter(r)
 	if err != nil {
 		http.Error(w, "invalid account id", http.StatusBadRequest)
 		return
@@ -69,15 +70,13 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(createdAccount)
 }
 
-func getIDFromPath(path string) (int, error) {
-	idText := strings.TrimPrefix(path, "/accounts/")
-	parts := strings.Split(idText, "/")
-
-	return strconv.Atoi(parts[0])
+func getAccountIDFromRouter(r *http.Request) (int, error) {
+	idStr := chi.URLParam(r, "id")
+	return strconv.Atoi(idStr)
 }
 
 func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
-	id, err := getIDFromPath(r.URL.Path)
+	id, err := getAccountIDFromRouter(r)
 	if err != nil {
 		http.Error(w, "invalid account id", http.StatusBadRequest)
 		return
@@ -104,7 +103,7 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
-	id, err := getIDFromPath(r.URL.Path)
+	id, err := getAccountIDFromRouter(r)
 	if err != nil {
 		http.Error(w, "invalid account id", http.StatusBadRequest)
 		return

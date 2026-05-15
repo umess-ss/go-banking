@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"go-banking/internal/services"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type TransactionHandler struct {
@@ -27,10 +28,8 @@ func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *TransactionHandler) GetTransactionsByAccountID(w http.ResponseWriter, r *http.Request) {
-	idText := strings.TrimPrefix(r.URL.Path, "/accounts/")
-	parts := strings.Split(idText, "/")
-
-	accountID, err := strconv.Atoi(parts[0])
+	idStr := chi.URLParam(r, "id")
+	accountID, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "invalid account id", http.StatusBadRequest)
 		return

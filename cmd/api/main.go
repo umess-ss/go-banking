@@ -7,11 +7,14 @@ import (
 	"go-banking/internal/services"
 	"log"
 	"net/http"
-	"strings"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	mux := http.NewServeMux()
+
+	router := chi.NewRouter()
+
 	accountRepo := repository.NewAccountRepository()
 	transactionRepo := repository.NewTransactionRepository()
 	accountService := services.NewAccountService(accountRepo, transactionRepo)
@@ -19,59 +22,28 @@ func main() {
 	accountHandler := handlers.NewAccountHandler(accountService)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 
-	mux.HandleFunc("/health", handlers.HealthCheckHandler)
+	router.Get("/health", handlers.HealthCheckHandler)
 
-	mux.HandleFunc("/accounts", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			accountHandler.GetAllAccounts(w, r)
-		} else if r.Method == http.MethodPost {
-			accountHandler.CreateAccount(w, r)
-		} else {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
+	router.Route("/accounts", func(r chi.Router) {
+		r.Get("/", accountHandler.GetAllAccounts)
+		r.Post("/", accountHandler.CreateAccount)
+
+		r.Get("/{id}", accountHandler.GetAccountByID)
+		r.Post("/{id}/deposit", accountHandler.Deposit)
+		r.Post("/{id}/withdraw", accountHandler.Withdraw)
+		r.Get("/{id}/transactions", transactionHandler.GetTransactionsByAccountID)
 	})
 
-	mux.HandleFunc("/accounts/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
+	router.Post("/transfer", accountHandler.Transfer)
 
-		switch {
-		case r.Method == http.MethodGet && strings.HasSuffix(path, "/transactions"):
-			transactionHandler.GetTransactionsByAccountID(w, r)
+	router.Get("/transactions", transactionHandler.GetTransactions)
 
-		case r.Method == http.MethodGet:
-			accountHandler.GetAccountByID(w, r)
+	port := ":8080"
 
-		case r.Method == http.MethodPost && strings.HasSuffix(path, "/deposit"):
-			accountHandler.Deposit(w, r)
+	fmt.Println("Go Banking API started on port", port)
 
-		case r.Method == http.MethodPost && strings.HasSuffix(path, "/withdraw"):
-			accountHandler.Withdraw(w, r)
-
-		default:
-			http.Error(w, "route not found", http.StatusNotFound)
-		}
-	})
-
-	mux.HandleFunc("/transfer", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		} else {
-			accountHandler.Transfer(w, r)
-		}
-	})
-
-	mux.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			transactionHandler.GetTransactions(w, r)
-		} else {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
-	port := 8080
-	fmt.Printf("Starting Go Banking API on port %d...\n", port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+	err := http.ListenAndServe(port, router)
 	if err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		log.Fatal("Server failed to start:", err)
 	}
 }
