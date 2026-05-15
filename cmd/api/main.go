@@ -13,8 +13,11 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	accountRepo := repository.NewAccountRepository()
-	accountService := services.NewAccountService(accountRepo)
+	transactionRepo := repository.NewTransactionRepository()
+	accountService := services.NewAccountService(accountRepo, transactionRepo)
+	transactionService := services.NewTransactionService(transactionRepo)
 	accountHandler := handlers.NewAccountHandler(accountService)
+	transactionHandler := handlers.NewTransactionHandler(transactionService)
 
 	mux.HandleFunc("/health", handlers.HealthCheckHandler)
 
@@ -32,16 +35,20 @@ func main() {
 		path := r.URL.Path
 
 		switch {
+		case r.Method == http.MethodGet && strings.HasSuffix(path, "/transactions"):
+			transactionHandler.GetTransactionsByAccountID(w, r)
+
 		case r.Method == http.MethodGet:
 			accountHandler.GetAccountByID(w, r)
+
 		case r.Method == http.MethodPost && strings.HasSuffix(path, "/deposit"):
 			accountHandler.Deposit(w, r)
+
 		case r.Method == http.MethodPost && strings.HasSuffix(path, "/withdraw"):
 			accountHandler.Withdraw(w, r)
-		case r.Method == http.MethodPost && strings.HasSuffix(path, "/transfer"):
-			accountHandler.Transfer(w, r)
+
 		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "route not found", http.StatusNotFound)
 		}
 	})
 
@@ -50,6 +57,14 @@ func main() {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		} else {
 			accountHandler.Transfer(w, r)
+		}
+	})
+
+	mux.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			transactionHandler.GetTransactions(w, r)
+		} else {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
