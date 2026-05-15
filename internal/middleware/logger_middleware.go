@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"go-banking/pkg/response"
 	"log"
 	"net/http"
 	"time"
@@ -46,7 +47,7 @@ func Recovery(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("panic: %v", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				response.WriteError(w, http.StatusInternalServerError, "internal server error")
 			}
 		}()
 		next.ServeHTTP(w, r)

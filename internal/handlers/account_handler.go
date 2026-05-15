@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"go-banking/internal/models"
 	"go-banking/internal/services"
+	"go-banking/pkg/response"
 	"net/http"
 	"strconv"
 
@@ -25,29 +26,23 @@ func NewAccountHandler(service *services.AccountService) *AccountHandler {
 
 func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 	accounts := h.service.GetAllAccounts()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(accounts)
+	response.WriteJSON(w, http.StatusOK, true, "Accounts retrieved successfully", accounts)
 }
 
 func (h *AccountHandler) GetAccountByID(w http.ResponseWriter, r *http.Request) {
 	id, err := getAccountIDFromRouter(r)
 	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
-		return
-	}
-	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
 	account, err := h.service.GetAccountByID(id)
 	if err != nil {
-		http.Error(w, "account not found", http.StatusNotFound)
+		response.WriteError(w, http.StatusNotFound, "account not found")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(account)
+	response.WriteJSON(w, http.StatusOK, true, "Account retrieved successfully", account)
 }
 
 func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
@@ -55,19 +50,17 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&account)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	createdAccount, err := h.service.CreateAccount(account)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdAccount)
+	response.WriteJSON(w, http.StatusCreated, true, "Account created successfully", createdAccount)
 }
 
 func getAccountIDFromRouter(r *http.Request) (int, error) {
@@ -78,7 +71,7 @@ func getAccountIDFromRouter(r *http.Request) (int, error) {
 func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 	id, err := getAccountIDFromRouter(r)
 	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -88,24 +81,23 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	account, err := h.service.Deposit(id, request.Amount)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(account)
+	response.WriteJSON(w, http.StatusOK, true, "Deposit successful", account)
 }
 
 func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	id, err := getAccountIDFromRouter(r)
 	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -115,18 +107,17 @@ func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	account, err := h.service.Withdraw(id, request.Amount)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(account)
+	response.WriteJSON(w, http.StatusOK, true, "Withdrawal successful", account)
 }
 
 func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
@@ -138,19 +129,15 @@ func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	err = h.service.Transfer(request.FromAccountID, request.ToAccountID, request.Amount)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response := map[string]string{
-		"message": "transfer successful",
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	response.WriteJSON(w, http.StatusOK, true, "Transfer successful", nil)
 }

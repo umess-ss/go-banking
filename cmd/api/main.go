@@ -6,7 +6,7 @@ import (
 	"go-banking/internal/middleware"
 	"go-banking/internal/repository"
 	"go-banking/internal/services"
-	"log"
+	"go-banking/pkg/response"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -15,6 +15,15 @@ import (
 func main() {
 
 	router := chi.NewRouter()
+
+	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		response.WriteError(w, http.StatusNotFound, "route not found")
+	})
+
+	router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		response.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+	})
+
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recovery)
 
@@ -47,6 +56,6 @@ func main() {
 
 	err := http.ListenAndServe(port, router)
 	if err != nil {
-		log.Fatal("Server failed to start:", err)
+		response.WriteError(nil, http.StatusInternalServerError, "failed to start server: "+err.Error())
 	}
 }

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"go-banking/pkg/response"
 	"net/http"
 	"strconv"
 
@@ -23,20 +23,18 @@ func NewTransactionHandler(service *services.TransactionService) *TransactionHan
 func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
 	transactions := h.service.GetTransactions()
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(transactions)
+	response.WriteJSON(w, http.StatusOK, true, "Transactions retrieved successfully", transactions)
 }
 
 func (h *TransactionHandler) GetTransactionsByAccountID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	accountID, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
 	transactions := h.service.GetTransactionsByAccountID(accountID)
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(transactions)
+	response.WriteJSON(w, http.StatusOK, true, "Transactions retrieved successfully", transactions)
 }

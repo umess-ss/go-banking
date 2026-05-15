@@ -1,15 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
+	"go-banking/pkg/response"
 	"net/http"
 )
 
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	response := map[string]string{
-		"status":  "ok",
-		"message": "Go Banking API is healthy",
+	data := map[string]string{
+		"status": "ok",
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	response.WriteJSON(w, http.StatusOK, true, "Go Banking API is healthy", data)
 }
