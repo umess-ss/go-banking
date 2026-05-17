@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"go-banking/internal/models"
 	"go-banking/internal/repository"
@@ -22,57 +23,54 @@ func NewAccountService(repo *repository.AccountRepository, transactionRepo *repo
 	}
 }
 
-func (s *AccountService) GetAllAccounts() []models.Account {
-	return s.repo.FindAll()
+func (s *AccountService) GetAllAccounts(ctx context.Context) ([]models.Account, error) {
+	return s.repo.FindAll(ctx)
 }
 
-func (s *AccountService) GetAccountByID(id int) (*models.Account, error) {
-	account, err := s.repo.FindByID(id)
-	if err != nil {
-		return nil, errors.New("account not found")
-	}
-	return account, nil
+func (s *AccountService) GetAccountByID(ctx context.Context, id int64) (*models.Account, error) {
+	return s.repo.FindByID(ctx, id)
 }
 
-func (s *AccountService) CreateAccount(account models.Account) (models.Account, error) {
+func (s *AccountService) CreateAccount(ctx context.Context, account models.Account) (*models.Account, error) {
 
 	if account.Name == "" {
-		panic("account name is required")
+		return nil, errors.New("account name is required")
 	}
 	if account.Balance < 0 {
-		panic("account balance cannot be negative")
+		return nil, errors.New("account balance cannot be negative")
 	}
-	return s.repo.Create(account), nil
+	return s.repo.Create(ctx, account)
 }
 
-func (s *AccountService) Deposit(accountID int, amount float64) (*models.Account, error) {
+func (s *AccountService) Deposit(ctx context.Context, accountID int64, amount float64) (*models.Account, error) {
 	if amount <= 0 {
 		return nil, errors.New("deposit amount must be positive")
 	}
-	account, err := s.GetAccountByID(accountID)
+
+	account, err := s.repo.FindByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 	account.Balance += amount
-	err = s.repo.Update(*account)
+	err = s.repo.Update(ctx, *account)
 	if err != nil {
 		return nil, err
 	}
-	toAccountID := accountID
-	s.transactionRepo.Create(models.Transaction{
+
+	_, err = s.transactionRepo.Create(ctx, models.Transaction{
 		Type:        "deposit",
-		ToAccountID: &toAccountID,
+		ToAccountID: &accountID,
 		Amount:      amount,
 		CreatedAt:   time.Now(),
 	})
 	return account, nil
 }
 
-func (s *AccountService) Withdraw(accountID int, amount float64) (*models.Account, error) {
+func (s *AccountService) Withdraw(ctx context.Context, accountID int64, amount float64) (*models.Account, error) {
 	if amount <= 0 {
 		return nil, errors.New("withdrawal amount must be positive")
 	}
-	account, err := s.GetAccountByID(accountID)
+	account, err := s.repo.FindByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,22 +78,21 @@ func (s *AccountService) Withdraw(accountID int, amount float64) (*models.Accoun
 		return nil, errors.New("insufficient funds")
 	}
 	account.Balance -= amount
-	err = s.repo.Update(*account)
+	err = s.repo.Update(ctx, *account)
 	if err != nil {
 		return nil, err
 	}
 
-	fromAccountID := accountID
-	s.transactionRepo.Create(models.Transaction{
+	_, err = s.transactionRepo.Create(ctx, models.Transaction{
 		Type:          "withdrawal",
-		FromAccountID: &fromAccountID,
+		FromAccountID: &accountID,
 		Amount:        amount,
 		CreatedAt:     time.Now(),
 	})
 	return account, nil
 }
 
-func (s *AccountService) Transfer(fromAccountID int, toAccountID int, amount float64) error {
+func (s *AccountService) Transfer(ctx context.Context, fromAccountID int64, toAccountID int64, amount float64) error {
 	if fromAccountID == toAccountID {
 		return errors.New("cannot transfer to the same account")
 	}
@@ -104,12 +101,12 @@ func (s *AccountService) Transfer(fromAccountID int, toAccountID int, amount flo
 		return errors.New("transfer amount must be greater than zero")
 	}
 
-	fromAccount, err := s.repo.FindByID(fromAccountID)
+	fromAccount, err := s.repo.FindByID(ctx, fromAccountID)
 	if err != nil {
 		return errors.New("from account not found")
 	}
 
-	toAccount, err := s.repo.FindByID(toAccountID)
+	toAccount, err := s.repo.FindByID(ctx, toAccountID)
 	if err != nil {
 		return errors.New("to account not found")
 	}
@@ -121,17 +118,17 @@ func (s *AccountService) Transfer(fromAccountID int, toAccountID int, amount flo
 	fromAccount.Balance -= amount
 	toAccount.Balance += amount
 
-	err = s.repo.Update(*fromAccount)
+	err = s.repo.Update(ctx, *fromAccount)
 	if err != nil {
 		return err
 	}
 
-	err = s.repo.Update(*toAccount)
+	err = s.repo.Update(ctx, *toAccount)
 	if err != nil {
 		return err
 	}
 
-	s.transactionRepo.Create(models.Transaction{
+	_, err = s.transactionRepo.Create(ctx, models.Transaction{
 		Type:          "transfer",
 		FromAccountID: &fromAccountID,
 		ToAccountID:   &toAccountID,

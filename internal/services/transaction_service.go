@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"go-banking/internal/models"
 	"go-banking/internal/repository"
 )
@@ -13,10 +14,10 @@ func NewTransactionService(repo *repository.TransactionRepository) *TransactionS
 	return &TransactionService{repo: repo}
 }
 
-func (s *TransactionService) GetTransactions() []models.Transaction {
-	return s.repo.FindAll()
+func (s *TransactionService) GetTransactions(ctx context.Context) ([]models.Transaction, error) {
+	return s.repo.FindAll(ctx)
 }
 
-func (s *TransactionService) GetTransactionsByAccountID(accountID int) []models.Transaction {
-	return s.repo.FindByAccountID(accountID)
+func (s *TransactionService) GetTransactionsByAccountID(ctx context.Context, accountID int64) ([]models.Transaction, error) {
+	return s.repo.FindByAccountID(ctx, accountID)
 }

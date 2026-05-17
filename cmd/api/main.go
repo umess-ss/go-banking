@@ -40,8 +40,8 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recovery)
 
-	accountRepo := repository.NewAccountRepository()
-	transactionRepo := repository.NewTransactionRepository()
+	accountRepo := repository.NewAccountRepository(dbPool)
+	transactionRepo := repository.NewTransactionRepository(dbPool)
 	accountService := services.NewAccountService(accountRepo, transactionRepo)
 	transactionService := services.NewTransactionService(transactionRepo)
 	accountHandler := handlers.NewAccountHandler(accountService)

@@ -16,6 +16,7 @@ import (
 // It includes methods for handling requests to get all accounts, get an account by ID, and
 // create a new account. Each method decodes the request, calls the service layer, and encodes
 // the response as JSON. It also handles error cases and returns apropriate HTTP status codes and messages.
+
 type AccountHandler struct {
 	service *services.AccountService
 }
@@ -24,19 +25,28 @@ func NewAccountHandler(service *services.AccountService) *AccountHandler {
 	return &AccountHandler{service: service}
 }
 
+func getAccountIDFromRoute(r *http.Request) (int64, error) {
+	idText := chi.URLParam(r, "id")
+	return strconv.ParseInt(idText, 10, 64)
+}
+
 func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
-	accounts := h.service.GetAllAccounts()
+	accounts, err := h.service.GetAllAccounts(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, "Failed to retrieve accounts")
+		return
+	}
 	response.WriteJSON(w, http.StatusOK, true, "Accounts retrieved successfully", accounts)
 }
 
 func (h *AccountHandler) GetAccountByID(w http.ResponseWriter, r *http.Request) {
-	id, err := getAccountIDFromRouter(r)
+	id, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
-	account, err := h.service.GetAccountByID(id)
+	account, err := h.service.GetAccountByID(r.Context(), id)
 	if err != nil {
 		response.WriteError(w, http.StatusNotFound, "account not found")
 		return
@@ -54,7 +64,7 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdAccount, err := h.service.CreateAccount(account)
+	createdAccount, err := h.service.CreateAccount(r.Context(), account)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -63,13 +73,8 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, true, "Account created successfully", createdAccount)
 }
 
-func getAccountIDFromRouter(r *http.Request) (int, error) {
-	idStr := chi.URLParam(r, "id")
-	return strconv.Atoi(idStr)
-}
-
 func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
-	id, err := getAccountIDFromRouter(r)
+	id, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
@@ -85,7 +90,7 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.service.Deposit(id, request.Amount)
+	account, err := h.service.Deposit(r.Context(), id, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -95,7 +100,7 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
-	id, err := getAccountIDFromRouter(r)
+	id, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
@@ -111,7 +116,7 @@ func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.service.Withdraw(id, request.Amount)
+	account, err := h.service.Withdraw(r.Context(), id, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -122,8 +127,8 @@ func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 	var request struct {
-		FromAccountID int     `json:"from_account_id"`
-		ToAccountID   int     `json:"to_account_id"`
+		FromAccountID int64   `json:"from_account_id"`
+		ToAccountID   int64   `json:"to_account_id"`
 		Amount        float64 `json:"amount"`
 	}
 
@@ -133,7 +138,7 @@ func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.Transfer(request.FromAccountID, request.ToAccountID, request.Amount)
+	err = h.service.Transfer(r.Context(), request.FromAccountID, request.ToAccountID, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
