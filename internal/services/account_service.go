@@ -101,40 +101,5 @@ func (s *AccountService) Transfer(ctx context.Context, fromAccountID int64, toAc
 		return errors.New("transfer amount must be greater than zero")
 	}
 
-	fromAccount, err := s.repo.FindByID(ctx, fromAccountID)
-	if err != nil {
-		return errors.New("from account not found")
-	}
-
-	toAccount, err := s.repo.FindByID(ctx, toAccountID)
-	if err != nil {
-		return errors.New("to account not found")
-	}
-
-	if fromAccount.Balance < amount {
-		return errors.New("insufficient balance")
-	}
-
-	fromAccount.Balance -= amount
-	toAccount.Balance += amount
-
-	err = s.repo.Update(ctx, *fromAccount)
-	if err != nil {
-		return err
-	}
-
-	err = s.repo.Update(ctx, *toAccount)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.transactionRepo.Create(ctx, models.Transaction{
-		Type:          "transfer",
-		FromAccountID: &fromAccountID,
-		ToAccountID:   &toAccountID,
-		Amount:        amount,
-		CreatedAt:     time.Now(),
-	})
-
-	return nil
+	return s.repo.TransferTx(ctx, fromAccountID, toAccountID, amount)
 }

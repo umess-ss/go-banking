@@ -29,7 +29,7 @@ func (r *TransactionRepository) Create(ctx context.Context, transaction models.T
 	`
 
 	if transaction.Status == "" {
-		transaction.Status = "Success"
+		transaction.Status = "success"
 	}
 
 	if transaction.ReferenceNumber == "" {
