@@ -54,24 +54,28 @@ func main() {
 
 	router.Get("/health", handlers.HealthCheckHandler)
 
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+
+		r.Route("/accounts", func(r chi.Router) {
+			r.Get("/", accountHandler.GetAllAccounts)
+			r.Post("/", accountHandler.CreateAccount)
+
+			r.Get("/{id}", accountHandler.GetAccountByID)
+			r.Post("/{id}/deposit", accountHandler.Deposit)
+			r.Post("/{id}/withdraw", accountHandler.Withdraw)
+			r.Get("/{id}/transactions", transactionHandler.GetTransactionsByAccountID)
+		})
+
+		r.Post("/transfer", accountHandler.Transfer)
+		r.Get("/transactions", transactionHandler.GetTransactions)
+
+	})
+
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
 	})
-
-	router.Route("/accounts", func(r chi.Router) {
-		r.Get("/", accountHandler.GetAllAccounts)
-		r.Post("/", accountHandler.CreateAccount)
-
-		r.Get("/{id}", accountHandler.GetAccountByID)
-		r.Post("/{id}/deposit", accountHandler.Deposit)
-		r.Post("/{id}/withdraw", accountHandler.Withdraw)
-		r.Get("/{id}/transactions", transactionHandler.GetTransactionsByAccountID)
-	})
-
-	router.Post("/transfer", accountHandler.Transfer)
-
-	router.Get("/transactions", transactionHandler.GetTransactions)
 
 	port := ":" + cfg.Port
 
