@@ -42,12 +42,21 @@ func main() {
 
 	accountRepo := repository.NewAccountRepository(dbPool)
 	transactionRepo := repository.NewTransactionRepository(dbPool)
+	userRepo := repository.NewUserRepository(dbPool)
+
 	accountService := services.NewAccountService(accountRepo, transactionRepo)
 	transactionService := services.NewTransactionService(transactionRepo)
+	authService := services.NewAuthService(userRepo)
+
 	accountHandler := handlers.NewAccountHandler(accountService)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	router.Get("/health", handlers.HealthCheckHandler)
+
+	router.Route("/auth", func(r chi.Router) {
+		r.Post("/register", authHandler.Register)
+	})
 
 	router.Route("/accounts", func(r chi.Router) {
 		r.Get("/", accountHandler.GetAllAccounts)
