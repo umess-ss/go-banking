@@ -3,3 +3,6 @@
 bin/
 tmp/
 *.log
+.agent
+.codex
+
