@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"go-banking/internal/middleware"
 	"go-banking/internal/services"
 
 	"github.com/go-chi/chi/v5"
@@ -21,28 +22,41 @@ func NewTransactionHandler(service *services.TransactionService) *TransactionHan
 }
 
 func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
-	transactions, err := h.service.GetTransactions(r.Context())
+	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, "Failed to retrieve transactions")
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Transactions retrieved successfully", transactions)
+	transactions, err := h.service.GetTransactions(r.Context(), userID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, "failed to fetch transactions")
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, true, "transactions fetched successfully", transactions)
 }
 
 func (h *TransactionHandler) GetTransactionsByAccountID(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	accountID, err := strconv.ParseInt(idStr, 10, 64)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	idText := chi.URLParam(r, "id")
+
+	accountID, err := strconv.ParseInt(idText, 10, 64)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
-	transactions, err := h.service.GetTransactionsByAccountID(r.Context(), accountID)
+	transactions, err := h.service.GetTransactionsByAccountID(r.Context(), accountID, userID)
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, "Failed to retrieve transactions")
+		response.WriteError(w, http.StatusInternalServerError, "failed to fetch account transactions")
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Transactions retrieved successfully", transactions)
+	response.WriteJSON(w, http.StatusOK, true, "account transactions fetched successfully", transactions)
 }

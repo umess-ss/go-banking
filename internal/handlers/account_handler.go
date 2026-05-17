@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"go-banking/internal/middleware"
 	"go-banking/internal/models"
 	"go-banking/internal/services"
 	"go-banking/pkg/response"
@@ -30,59 +31,82 @@ func getAccountIDFromRoute(r *http.Request) (int64, error) {
 	return strconv.ParseInt(idText, 10, 64)
 }
 
-func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
-	accounts, err := h.service.GetAllAccounts(r.Context())
+func (h *AccountHandler) GetAccounts(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, "Failed to retrieve accounts")
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	response.WriteJSON(w, http.StatusOK, true, "Accounts retrieved successfully", accounts)
+
+	accounts, err := h.service.GetAccounts(r.Context(), userID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, "failed to fetch accounts")
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, true, "accounts fetched successfully", accounts)
 }
 
 func (h *AccountHandler) GetAccountByID(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	id, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
-	account, err := h.service.GetAccountByID(r.Context(), id)
+	account, err := h.service.GetAccountByID(r.Context(), id, userID)
 	if err != nil {
 		response.WriteError(w, http.StatusNotFound, "account not found")
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Account retrieved successfully", account)
+	response.WriteJSON(w, http.StatusOK, true, "account fetched successfully", account)
 }
 
 func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	var account models.Account
 
-	err := json.NewDecoder(r.Body).Decode(&account)
+	err = json.NewDecoder(r.Body).Decode(&account)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	createdAccount, err := h.service.CreateAccount(r.Context(), account)
+	createdAccount, err := h.service.CreateAccount(r.Context(), userID, account)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.WriteJSON(w, http.StatusCreated, true, "Account created successfully", createdAccount)
+	response.WriteJSON(w, http.StatusCreated, true, "account created successfully", createdAccount)
 }
 
 func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
-	id, err := getAccountIDFromRoute(r)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	accountID, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
-	var request struct {
-		Amount float64 `json:"amount"`
-	}
+	var request models.AmountRequest
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -90,25 +114,29 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.service.Deposit(r.Context(), id, request.Amount)
+	account, err := h.service.Deposit(r.Context(), userID, accountID, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Deposit successful", account)
+	response.WriteJSON(w, http.StatusOK, true, "deposit completed successfully", account)
 }
 
 func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
-	id, err := getAccountIDFromRoute(r)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	accountID, err := getAccountIDFromRoute(r)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
-	var request struct {
-		Amount float64 `json:"amount"`
-	}
+	var request models.AmountRequest
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -116,33 +144,35 @@ func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.service.Withdraw(r.Context(), id, request.Amount)
+	account, err := h.service.Withdraw(r.Context(), userID, accountID, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Withdrawal successful", account)
+	response.WriteJSON(w, http.StatusOK, true, "withdraw completed successfully", account)
 }
 
 func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		FromAccountID int64   `json:"from_account_id"`
-		ToAccountID   int64   `json:"to_account_id"`
-		Amount        float64 `json:"amount"`
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
+		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+	var request models.TransferRequest
+
+	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	err = h.service.Transfer(r.Context(), request.FromAccountID, request.ToAccountID, request.Amount)
+	err = h.service.Transfer(r.Context(), userID, request.FromAccountID, request.ToAccountID, request.Amount)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, true, "Transfer successful", nil)
+	response.WriteJSON(w, http.StatusOK, true, "transfer completed successfully", nil)
 }

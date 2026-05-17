@@ -58,7 +58,7 @@ func main() {
 		r.Use(middleware.AuthMiddleware)
 
 		r.Route("/accounts", func(r chi.Router) {
-			r.Get("/", accountHandler.GetAllAccounts)
+			r.Get("/", accountHandler.GetAccounts)
 			r.Post("/", accountHandler.CreateAccount)
 
 			r.Get("/{id}", accountHandler.GetAccountByID)

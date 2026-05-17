@@ -26,14 +26,15 @@ func NewAccountRepository(db *pgxpool.Pool) *AccountRepository {
 	}
 }
 
-func (r *AccountRepository) FindAll(ctx context.Context) ([]models.Account, error) {
+func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) ([]models.Account, error) {
 	query := `
 		SELECT id, user_id, name, account_number, balance, currency, created_at, updated_at
 		FROM accounts
+		WHERE user_id = $1
 		ORDER BY id DESC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -57,18 +58,23 @@ func (r *AccountRepository) FindAll(ctx context.Context) ([]models.Account, erro
 		}
 		accounts = append(accounts, account)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return accounts, nil
 }
 
-func (r *AccountRepository) FindByID(ctx context.Context, id int64) (*models.Account, error) {
+func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int64, userID int64) (*models.Account, error) {
 	query := `
 		SELECT id, user_id, name, account_number, balance, currency, created_at, updated_at
 		FROM accounts
-		WHERE id = $1
+		WHERE id = $1 AND user_id = $2
 	`
 
 	var account models.Account
-	err := r.db.QueryRow(ctx, query, id).Scan(
+
+	err := r.db.QueryRow(ctx, query, accountID, userID).Scan(
 		&account.ID,
 		&account.UserID,
 		&account.Name,
@@ -79,8 +85,9 @@ func (r *AccountRepository) FindByID(ctx context.Context, id int64) (*models.Acc
 		&account.UpdatedAt,
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("account not found")
 	}
+
 	return &account, nil
 }
 

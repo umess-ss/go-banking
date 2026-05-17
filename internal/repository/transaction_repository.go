@@ -61,14 +61,17 @@ func (r *TransactionRepository) Create(ctx context.Context, transaction models.T
 	return transaction, nil
 }
 
-func (r *TransactionRepository) FindAll(ctx context.Context) ([]models.Transaction, error) {
+func (r *TransactionRepository) FindAllByUserID(ctx context.Context, userID int64) ([]models.Transaction, error) {
 	query := `
-		SELECT id, type, from_account_id, to_account_id, amount, status, reference_number, created_at
-		FROM transactions
-		ORDER BY created_at DESC
+		SELECT DISTINCT t.id, t.type, t.from_account_id, t.to_account_id, t.amount, t.status, t.reference_number, t.created_at
+		FROM transactions t
+			LEFT JOIN accounts from_acc ON t.from_account_id = from_acc.id
+			LEFT JOIN accounts to_acc ON t.to_account_id = to_acc.id
+		WHERE from_acc.user_id = $1 OR to_acc.user_id = $1
+		ORDER BY t.created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,15 +106,17 @@ func (r *TransactionRepository) FindAll(ctx context.Context) ([]models.Transacti
 	return transactions, nil
 }
 
-func (r *TransactionRepository) FindByAccountID(ctx context.Context, accountID int64) ([]models.Transaction, error) {
+func (r *TransactionRepository) FindByAccountIDAndUserID(ctx context.Context, accountID int64, userID int64) ([]models.Transaction, error) {
 	query := `
-		SELECT id, type, from_account_id, to_account_id, amount, status, reference_number, created_at
-		FROM transactions
-		WHERE from_account_id = $1 OR to_account_id = $1
-		ORDER BY created_at DESC
+		SELECT t.id, t.type, t.from_account_id, t.to_account_id, t.amount, t.status, t.reference_number, t.created_at
+		FROM transactions t
+		INNER JOIN accounts a ON a.id = $1
+		WHERE a.user_id = $2
+		  AND (t.from_account_id = $1 OR t.to_account_id = $1)
+		ORDER BY t.created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, accountID)
+	rows, err := r.db.Query(ctx, query, accountID, userID)
 	if err != nil {
 		return nil, err
 	}

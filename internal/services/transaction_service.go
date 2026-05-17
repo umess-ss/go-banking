@@ -14,10 +14,10 @@ func NewTransactionService(repo *repository.TransactionRepository) *TransactionS
 	return &TransactionService{repo: repo}
 }
 
-func (s *TransactionService) GetTransactions(ctx context.Context) ([]models.Transaction, error) {
-	return s.repo.FindAll(ctx)
+func (s *TransactionService) GetTransactions(ctx context.Context, userID int64) ([]models.Transaction, error) {
+	return s.repo.FindAllByUserID(ctx, userID)
 }
 
-func (s *TransactionService) GetTransactionsByAccountID(ctx context.Context, accountID int64) ([]models.Transaction, error) {
-	return s.repo.FindByAccountID(ctx, accountID)
+func (s *TransactionService) GetTransactionsByAccountID(ctx context.Context, accountID int64, userID int64) ([]models.Transaction, error) {
+	return s.repo.FindByAccountIDAndUserID(ctx, accountID, userID)
 }
