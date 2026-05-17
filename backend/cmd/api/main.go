@@ -81,7 +81,8 @@ func main() {
 
 	fmt.Println("Go Banking API started on port", port)
 
-	err = http.ListenAndServe(port, router)
+	handler := middleware.CORS(router)
+	err = http.ListenAndServe(port, handler)
 	if err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
