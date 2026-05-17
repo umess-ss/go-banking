@@ -1,3 +1,5 @@
+import { TOKEN_KEY } from "@/lib/auth";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type ApiFetchOptions = RequestInit & {
@@ -11,7 +13,7 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const token =
     typeof window !== "undefined"
-      ? localStorage.getItem("access_token")
+      ? localStorage.getItem(TOKEN_KEY)
       : null;
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {

@@ -1,4 +1,5 @@
 "use client";
+import { setToken } from "@/lib/auth";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -22,10 +23,10 @@ export default function LoginPage() {
     try {
       const data = await loginUser({ email, password });
 
-      const token = data.access_token || data.token;
+      const token = data.data.access_token;
 
       if (token) {
-        localStorage.setItem("accessToken", token);
+        setToken(token);
       }
 
       router.push("/dashboard");
