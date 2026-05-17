@@ -56,6 +56,7 @@ func main() {
 
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
+		r.Post("/login", authHandler.Login)
 	})
 
 	router.Route("/accounts", func(r chi.Router) {

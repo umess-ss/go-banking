@@ -5,8 +5,11 @@ import (
 	"errors"
 	"go-banking/internal/models"
 	"go-banking/internal/repository"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -65,4 +68,56 @@ func (s *AuthService) Register(ctx context.Context, request models.RegisterReque
 		Email:     createdUser.Email,
 		CreatedAt: createdUser.CreatedAt,
 	}, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, request models.LoginRequest) (models.LoginResponse, error) {
+	request.Email = strings.TrimSpace(strings.ToLower(request.Email))
+
+	if request.Email == "" {
+		return models.LoginResponse{}, errors.New("email is required")
+	}
+	if request.Password == "" {
+		return models.LoginResponse{}, errors.New("password is required")
+	}
+
+	user, err := s.userRepo.FindByEmail(ctx, request.Email)
+	if err != nil {
+		return models.LoginResponse{}, errors.New("invalid email or password")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password))
+	if err != nil {
+		return models.LoginResponse{}, errors.New("invalid email or password")
+	}
+
+	token, err := s.GenerateJWT(user.ID, user.Email)
+	if err != nil {
+		return models.LoginResponse{}, errors.New("failed to generate access token")
+	}
+
+	return models.LoginResponse{
+		AccessToken: token,
+		User: models.UserResponse{
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt,
+		},
+	}, nil
+}
+
+func (s *AuthService) GenerateJWT(userID int64, email string) (string, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", errors.New("JWT secret is not set")
+	}
+
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"email":   email,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }
