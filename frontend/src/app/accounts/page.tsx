@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import Container from "@/components/shared/Container";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
@@ -151,10 +152,11 @@ export default function AccountsPage() {
           {!loading && !error && accounts.length > 0 && (
             <div className="grid gap-4 md:grid-cols-2">
               {accounts.map((account) => (
-                <div
-                  key={account.id}
-                  className="rounded-2xl border bg-white p-6 shadow-sm"
-                >
+                <Link
+                    href={`/accounts/${account.id}`}
+                    key={account.id}
+                    className="block rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
                   <div className="flex items-start justify-between gap-4">
                     <div>
                     <p className="text-sm capitalize text-gray-500">
@@ -176,7 +178,7 @@ export default function AccountsPage() {
                   <p className="mt-6 text-3xl font-bold">
                     {(account.balance || 0).toLocaleString()}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           )}

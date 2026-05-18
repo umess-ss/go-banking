@@ -43,3 +43,25 @@ export async function createAccount(payload: CreateAccountPayload) {
 
   return response as Account;
 }
+
+
+
+export async function getAccountById(accountId: number) {
+  const response = await apiFetch<AccountResponse | Account>(
+    `/accounts/${accountId}`,
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
+
+  if ("data" in response && response.data) {
+    return response.data;
+  }
+
+  if ("account" in response && response.account) {
+    return response.account;
+  }
+
+  return response as Account;
+}

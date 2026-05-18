@@ -75,3 +75,20 @@ export async function transfer(
 
   return response.data || response.transaction;
 }
+
+
+export async function getTransactionsByAccountId(accountId: number) {
+  const response = await apiFetch<TransactionsResponse | Transaction[]>(
+    `/accounts/${accountId}/transactions`,
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  return response.data || response.transactions || [];
+}
