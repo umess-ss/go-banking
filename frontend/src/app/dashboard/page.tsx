@@ -11,6 +11,9 @@ import type { Transaction } from "@/types/transaction";
 import { getAuthUser, setAuthUser } from "@/lib/auth";
 import type { AuthUser } from "@/types/auth";
 import { getCurrentUser } from "@/services/auth.service";
+import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingState from "@/components/ui/LoadingState";
 
 export default function DashboardPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -107,17 +110,9 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {loading && (
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="text-gray-600">Loading dashboard...</p>
-            </div>
-          )}
+          {loading && <LoadingState text="Loading dashboard..." />}
 
-          {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
+          {error && <Alert variant="error">{error}</Alert>}
 
           {!loading && !error && (
             <>
@@ -198,9 +193,9 @@ export default function DashboardPage() {
                   </div>
 
                   {recentAccounts.length === 0 ? (
-                    <p className="mt-6 text-gray-600">
+                    <EmptyState variant="plain" className="mt-6">
                       No accounts found. Create your first account.
-                    </p>
+                    </EmptyState>
                   ) : (
                     <div className="mt-6 divide-y">
                       {recentAccounts.map((account) => (
@@ -248,9 +243,9 @@ export default function DashboardPage() {
                   </div>
 
                   {recentTransactions.length === 0 ? (
-                    <p className="mt-6 text-gray-600">
+                    <EmptyState variant="plain" className="mt-6">
                       No transactions found yet.
-                    </p>
+                    </EmptyState>
                   ) : (
                     <div className="mt-6 divide-y">
                       {recentTransactions.map((transaction) => (

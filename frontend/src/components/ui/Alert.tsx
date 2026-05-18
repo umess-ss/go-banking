@@ -3,9 +3,14 @@ type AlertVariant = "success" | "error" | "info";
 type AlertProps = {
   children: React.ReactNode;
   variant?: AlertVariant;
+  className?: string;
 };
 
-export default function Alert({ children, variant = "info" }: AlertProps) {
+export default function Alert({
+  children,
+  variant = "info",
+  className = "",
+}: AlertProps) {
   const variants: Record<AlertVariant, string> = {
     success: "bg-green-50 text-green-700 border-green-200",
     error: "bg-red-50 text-red-600 border-red-200",
@@ -13,7 +18,9 @@ export default function Alert({ children, variant = "info" }: AlertProps) {
   };
 
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm ${variants[variant]}`}>
+    <div
+      className={`rounded-lg border px-4 py-3 text-sm ${variants[variant]} ${className}`}
+    >
       {children}
     </div>
   );

@@ -4,6 +4,9 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import Container from "@/components/shared/Container";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingState from "@/components/ui/LoadingState";
 import { createAccount, getAccounts } from "@/services/account.service";
 import type { Account } from "@/types/account";
 
@@ -45,9 +48,9 @@ export default function AccountsPage() {
     try {
       await createAccount({
         name: accountName,
+        account_type: accountType,
         currency,
       });
-
 
       setSuccess("Account created successfully.");
       setAccountName("");
@@ -125,30 +128,18 @@ export default function AccountsPage() {
             </form>
 
             {success && (
-              <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+              <Alert variant="success" className="mt-4">
                 {success}
-              </p>
+              </Alert>
             )}
           </div>
 
-          {loading && (
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="text-gray-600">Loading accounts...</p>
-            </div>
-          )}
+          {loading && <LoadingState text="Loading accounts..." />}
 
-          {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
+          {error && <Alert variant="error">{error}</Alert>}
 
           {!loading && !error && accounts.length === 0 && (
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="text-gray-600">
-                No accounts found. Create your first account above.
-              </p>
-            </div>
+            <EmptyState>No accounts found. Create your first account above.</EmptyState>
           )}
 
           {!loading && !error && accounts.length > 0 && (

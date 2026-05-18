@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import Container from "@/components/shared/Container";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingState from "@/components/ui/LoadingState";
 import { getAccounts } from "@/services/account.service";
 import { parsePositiveAmount } from "@/lib/validation";
 import {
@@ -339,30 +342,16 @@ if (sourceAccount) {
             </form>
           </div>
 
-          {success && (
-            <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-              {success}
-            </p>
-          )}
+          {success && <Alert variant="success">{success}</Alert>}
 
-          {loading && (
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="text-gray-600">Loading transactions...</p>
-            </div>
-          )}
+          {loading && <LoadingState text="Loading transactions..." />}
 
-          {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
+          {error && <Alert variant="error">{error}</Alert>}
 
           {!loading && !error && transactions.length === 0 && (
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="text-gray-600">
-                No transactions found. Try making a deposit first.
-              </p>
-            </div>
+            <EmptyState>
+              No transactions found. Try making a deposit first.
+            </EmptyState>
           )}
 
           {!loading && transactions.length > 0 && (
