@@ -307,39 +307,6 @@ Core tables:
 
 Migration files live in `backend/migrations` and should be the only way schema changes are introduced.
 
-## Production Checklist
-
-Before production deployment:
-
-- Build and deploy the backend with `APP_ENV=production`.
-- Set a strong `JWT_SECRET` through the hosting platform's secret manager.
-- Use managed PostgreSQL or a hardened PostgreSQL instance with backups enabled.
-- Run `goose -dir migrations postgres "$DATABASE_URL" up` during release.
-- Replace wildcard CORS in `backend/internal/middleware/cors.go` with the exact frontend origin.
-- Serve the API and frontend over HTTPS.
-- Configure frontend `NEXT_PUBLIC_API_URL` to the HTTPS API URL.
-- Run `go test ./...`, `npm run lint`, and `npm run build`.
-- Add request rate limiting and monitoring before exposing auth endpoints publicly.
-- Review token storage strategy for your threat model. The current frontend stores tokens in `localStorage`, which is simple but vulnerable to token theft if XSS is introduced.
-
-## Troubleshooting
-
-### Dashboard shows `Welcome` without a name
-
-The dashboard reads the saved auth user from browser storage. If the user object is missing but the token exists, it now calls `GET /auth/me` and saves the returned user. Restart the backend after pulling changes that add `/auth/me`, then refresh the dashboard.
-
-### API returns `Session expired. Please login again.`
-
-The frontend received a `401` from a protected endpoint. Log in again. If it repeats immediately, verify `JWT_SECRET` is set and that the backend was not restarted with a different secret.
-
-### Migrations cannot connect
-
-Check that PostgreSQL is running and that `DATABASE_URL` in `backend/.env` matches the database credentials. Also update `DB_URL` in `backend/Makefile` if you rely on the Makefile migration commands.
-
-### Frontend cannot reach the API
-
-Confirm `frontend/.env.local` has the correct `NEXT_PUBLIC_API_URL`, restart `npm run dev`, and check the backend CORS settings.
-
 ## License
 
 No license has been declared for this repository.
