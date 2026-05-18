@@ -53,31 +53,10 @@ func main() {
 	transactionHandler := transaction.NewTransactionHandler(transactionService)
 	authHandler := auth.NewAuthHandler(authService)
 
-	router.Get("/health", health.HealthCheckHandler)
-
-	router.Group(func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware)
-
-		r.Route("/accounts", func(r chi.Router) {
-			r.Get("/", accountHandler.GetAccounts)
-			r.Post("/", accountHandler.CreateAccount)
-
-			r.Get("/{id}", accountHandler.GetAccountByID)
-			r.Post("/{id}/deposit", accountHandler.Deposit)
-			r.Post("/{id}/withdraw", accountHandler.Withdraw)
-			r.Get("/{id}/transactions", transactionHandler.GetTransactionsByAccountID)
-		})
-
-		r.Post("/transfer", accountHandler.Transfer)
-		r.Get("/transactions", transactionHandler.GetTransactions)
-		r.Get("/auth/me", authHandler.Me)
-
-	})
-
-	router.Route("/auth", func(r chi.Router) {
-		r.Post("/register", authHandler.Register)
-		r.Post("/login", authHandler.Login)
-	})
+	health.RegisterRoutes(router)
+	auth.RegisterRoutes(router, authHandler)
+	account.RegisterRoutes(router, accountHandler, transactionHandler)
+	transaction.RegisterRoutes(router, transactionHandler)
 
 	port := ":" + cfg.Port
 
