@@ -1,10 +1,9 @@
-package services
+package account
 
 import (
 	"context"
 	"errors"
-	"go-banking/internal/models"
-	"go-banking/internal/repository"
+	"go-banking/internal/transaction"
 	"time"
 )
 
@@ -12,26 +11,26 @@ import (
 // on accounts. It provides methods for retrieving and creating accounts, and can include
 // additional business rules or validations as needed.
 type AccountService struct {
-	repo            *repository.AccountRepository
-	transactionRepo *repository.TransactionRepository
+	repo            *AccountRepository
+	transactionRepo *transaction.TransactionRepository
 }
 
-func NewAccountService(repo *repository.AccountRepository, transactionRepo *repository.TransactionRepository) *AccountService {
+func NewAccountService(repo *AccountRepository, transactionRepo *transaction.TransactionRepository) *AccountService {
 	return &AccountService{
 		repo:            repo,
 		transactionRepo: transactionRepo,
 	}
 }
 
-func (s *AccountService) GetAccounts(ctx context.Context, userID int64) ([]models.Account, error) {
+func (s *AccountService) GetAccounts(ctx context.Context, userID int64) ([]Account, error) {
 	return s.repo.FindAllByUserID(ctx, userID)
 }
 
-func (s *AccountService) GetAccountByID(ctx context.Context, accountID int64, userID int64) (*models.Account, error) {
+func (s *AccountService) GetAccountByID(ctx context.Context, accountID int64, userID int64) (*Account, error) {
 	return s.repo.FindByIDAndUserID(ctx, accountID, userID)
 }
 
-func (s *AccountService) CreateAccount(ctx context.Context, userID int64, account models.Account) (*models.Account, error) {
+func (s *AccountService) CreateAccount(ctx context.Context, userID int64, account Account) (*Account, error) {
 	if account.Name == "" {
 		return nil, errors.New("account name is required")
 	}
@@ -53,7 +52,7 @@ func (s *AccountService) CreateAccount(ctx context.Context, userID int64, accoun
 	return s.repo.Create(ctx, account)
 }
 
-func (s *AccountService) Deposit(ctx context.Context, userID int64, accountID int64, amount float64) (*models.Account, error) {
+func (s *AccountService) Deposit(ctx context.Context, userID int64, accountID int64, amount float64) (*Account, error) {
 	if amount <= 0 {
 		return nil, errors.New("deposit amount must be positive")
 	}
@@ -68,7 +67,7 @@ func (s *AccountService) Deposit(ctx context.Context, userID int64, accountID in
 		return nil, err
 	}
 
-	_, err = s.transactionRepo.Create(ctx, models.Transaction{
+	_, err = s.transactionRepo.Create(ctx, transaction.Transaction{
 		Type:        "deposit",
 		ToAccountID: &accountID,
 		Amount:      amount,
@@ -77,7 +76,7 @@ func (s *AccountService) Deposit(ctx context.Context, userID int64, accountID in
 	return account, nil
 }
 
-func (s *AccountService) Withdraw(ctx context.Context, userID int64, accountID int64, amount float64) (*models.Account, error) {
+func (s *AccountService) Withdraw(ctx context.Context, userID int64, accountID int64, amount float64) (*Account, error) {
 	if amount <= 0 {
 		return nil, errors.New("withdraw amount must be greater than zero")
 	}
@@ -100,7 +99,7 @@ func (s *AccountService) Withdraw(ctx context.Context, userID int64, accountID i
 
 	fromAccountID := account.ID
 
-	_, err = s.transactionRepo.Create(ctx, models.Transaction{
+	_, err = s.transactionRepo.Create(ctx, transaction.Transaction{
 		Type:          "withdraw",
 		FromAccountID: &fromAccountID,
 		Amount:        amount,

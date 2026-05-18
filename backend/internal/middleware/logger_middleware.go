@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
 	"log"
 	"net/http"
 	"time"

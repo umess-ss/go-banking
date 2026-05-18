@@ -1,21 +1,20 @@
-package handlers
+package transaction
 
 import (
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
 	"net/http"
 	"strconv"
 
 	"go-banking/internal/middleware"
-	"go-banking/internal/services"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type TransactionHandler struct {
-	service *services.TransactionService
+	service *TransactionService
 }
 
-func NewTransactionHandler(service *services.TransactionService) *TransactionHandler {
+func NewTransactionHandler(service *TransactionService) *TransactionHandler {
 	return &TransactionHandler{
 		service: service,
 	}

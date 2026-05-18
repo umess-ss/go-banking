@@ -1,11 +1,10 @@
-package handlers
+package account
 
 import (
 	"encoding/json"
 	"go-banking/internal/middleware"
-	"go-banking/internal/models"
-	"go-banking/internal/services"
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
+	"go-banking/internal/transaction"
 	"net/http"
 	"strconv"
 
@@ -19,10 +18,10 @@ import (
 // the response as JSON. It also handles error cases and returns apropriate HTTP status codes and messages.
 
 type AccountHandler struct {
-	service *services.AccountService
+	service *AccountService
 }
 
-func NewAccountHandler(service *services.AccountService) *AccountHandler {
+func NewAccountHandler(service *AccountService) *AccountHandler {
 	return &AccountHandler{service: service}
 }
 
@@ -76,7 +75,7 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var account models.Account
+	var account Account
 
 	err = json.NewDecoder(r.Body).Decode(&account)
 	if err != nil {
@@ -106,7 +105,7 @@ func (h *AccountHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request models.AmountRequest
+	var request transaction.AmountRequest
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -136,7 +135,7 @@ func (h *AccountHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request models.AmountRequest
+	var request transaction.AmountRequest
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -160,7 +159,7 @@ func (h *AccountHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request models.TransferRequest
+	var request transaction.TransferRequest
 
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {

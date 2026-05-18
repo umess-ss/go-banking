@@ -1,27 +1,25 @@
-package handlers
+package auth
 
 import (
 	"encoding/json"
 	"go-banking/internal/middleware"
 	"net/http"
 
-	"go-banking/internal/models"
-	"go-banking/internal/services"
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
 )
 
 type AuthHandler struct {
-	service *services.AuthService
+	service *AuthService
 }
 
-func NewAuthHandler(service *services.AuthService) *AuthHandler {
+func NewAuthHandler(service *AuthService) *AuthHandler {
 	return &AuthHandler{
 		service: service,
 	}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var request models.RegisterRequest
+	var request RegisterRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -39,7 +37,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var request models.LoginRequest
+	var request LoginRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {

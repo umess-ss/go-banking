@@ -1,8 +1,7 @@
-package repository
+package auth
 
 import (
 	"context"
-	"go-banking/internal/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -17,7 +16,7 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user models.User) (models.User, error) {
+func (r *UserRepository) Create(ctx context.Context, user User) (User, error) {
 	query := `
 		INSERT INTO users (name, email, password_hash)
 		VALUES ($1, $2, $3)
@@ -37,18 +36,18 @@ func (r *UserRepository) Create(ctx context.Context, user models.User) (models.U
 		&user.CreatedAt,
 	)
 	if err != nil {
-		return models.User{}, err
+		return User{}, err
 	}
 	return user, nil
 }
 
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		SELECT id, name, email, password_hash, created_at
 		FROM users
 		WHERE email = $1
 	`
-	var user models.User
+	var user User
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
@@ -62,13 +61,13 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 	return &user, nil
 }
 
-func (r *UserRepository) FindByID(ctx context.Context, id int64) (*models.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, id int64) (*User, error) {
 	query := `
 		SELECT id, name, email, password_hash, created_at
 		FROM users
 		WHERE id = $1
 	`
-	var user models.User
+	var user User
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID,
 		&user.Name,

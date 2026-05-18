@@ -1,13 +1,12 @@
-package repository
+package account
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"go-banking/internal/transaction"
 	"math/rand"
 	"time"
-
-	"go-banking/internal/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -26,7 +25,7 @@ func NewAccountRepository(db *pgxpool.Pool) *AccountRepository {
 	}
 }
 
-func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) ([]models.Account, error) {
+func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) ([]Account, error) {
 	query := `
 		SELECT id, user_id, name, account_number, account_type, balance, currency, created_at, updated_at
 		FROM accounts
@@ -40,9 +39,9 @@ func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) (
 	}
 	defer rows.Close()
 
-	accounts := []models.Account{}
+	accounts := []Account{}
 	for rows.Next() {
-		var account models.Account
+		var account Account
 		err := rows.Scan(
 			&account.ID,
 			&account.UserID,
@@ -66,14 +65,14 @@ func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) (
 	return accounts, nil
 }
 
-func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int64, userID int64) (*models.Account, error) {
+func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int64, userID int64) (*Account, error) {
 	query := `
 		SELECT id, user_id, name, account_number, account_type, balance, currency, created_at, updated_at
 		FROM accounts
 		WHERE id = $1 AND user_id = $2
 	`
 
-	var account models.Account
+	var account Account
 
 	err := r.db.QueryRow(ctx, query, accountID, userID).Scan(
 		&account.ID,
@@ -93,7 +92,7 @@ func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int
 	return &account, nil
 }
 
-func (r *AccountRepository) Create(ctx context.Context, account models.Account) (*models.Account, error) {
+func (r *AccountRepository) Create(ctx context.Context, account Account) (*Account, error) {
 	query := `
 		INSERT INTO accounts (user_id, name, account_number, account_type, balance, currency)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -137,7 +136,7 @@ func (r *AccountRepository) Create(ctx context.Context, account models.Account) 
 	return &account, nil
 }
 
-func (r *AccountRepository) Update(ctx context.Context, account models.Account) error {
+func (r *AccountRepository) Update(ctx context.Context, account Account) error {
 	query := `
 		UPDATE accounts
 		SET name = $1,
@@ -277,7 +276,7 @@ func (r *AccountRepository) TransferTx(ctx context.Context, fromAccountID, toAcc
 		toAccountID,
 		amount,
 		"success",
-		generateReferenceNumber(),
+		transaction.GenerateReferenceNumber(),
 	)
 	if err != nil {
 		return err

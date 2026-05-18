@@ -1,9 +1,8 @@
-package repository
+package transaction
 
 import (
 	"context"
 	"fmt"
-	"go-banking/internal/models"
 	"math/rand"
 	"time"
 
@@ -20,7 +19,7 @@ func NewTransactionRepository(db *pgxpool.Pool) *TransactionRepository {
 	}
 }
 
-func (r *TransactionRepository) Create(ctx context.Context, transaction models.Transaction) (models.Transaction, error) {
+func (r *TransactionRepository) Create(ctx context.Context, transaction Transaction) (Transaction, error) {
 	query := `
 		INSERT INTO transactions (
 		type, from_account_id, to_account_id, amount, status, reference_number)
@@ -33,7 +32,7 @@ func (r *TransactionRepository) Create(ctx context.Context, transaction models.T
 	}
 
 	if transaction.ReferenceNumber == "" {
-		transaction.ReferenceNumber = generateReferenceNumber()
+		transaction.ReferenceNumber = GenerateReferenceNumber()
 	}
 
 	err := r.db.QueryRow(
@@ -56,12 +55,12 @@ func (r *TransactionRepository) Create(ctx context.Context, transaction models.T
 		&transaction.CreatedAt,
 	)
 	if err != nil {
-		return models.Transaction{}, err
+		return Transaction{}, err
 	}
 	return transaction, nil
 }
 
-func (r *TransactionRepository) FindAllByUserID(ctx context.Context, userID int64) ([]models.Transaction, error) {
+func (r *TransactionRepository) FindAllByUserID(ctx context.Context, userID int64) ([]Transaction, error) {
 	query := `
 		SELECT DISTINCT t.id, t.type, t.from_account_id, t.to_account_id, t.amount, t.status, t.reference_number, t.created_at
 		FROM transactions t
@@ -77,10 +76,10 @@ func (r *TransactionRepository) FindAllByUserID(ctx context.Context, userID int6
 	}
 	defer rows.Close()
 
-	transactions := []models.Transaction{}
+	transactions := []Transaction{}
 
 	for rows.Next() {
-		var transaction models.Transaction
+		var transaction Transaction
 
 		err := rows.Scan(
 			&transaction.ID,
@@ -106,7 +105,7 @@ func (r *TransactionRepository) FindAllByUserID(ctx context.Context, userID int6
 	return transactions, nil
 }
 
-func (r *TransactionRepository) FindByAccountIDAndUserID(ctx context.Context, accountID int64, userID int64) ([]models.Transaction, error) {
+func (r *TransactionRepository) FindByAccountIDAndUserID(ctx context.Context, accountID int64, userID int64) ([]Transaction, error) {
 	query := `
 		SELECT t.id, t.type, t.from_account_id, t.to_account_id, t.amount, t.status, t.reference_number, t.created_at
 		FROM transactions t
@@ -122,10 +121,10 @@ func (r *TransactionRepository) FindByAccountIDAndUserID(ctx context.Context, ac
 	}
 	defer rows.Close()
 
-	transactions := []models.Transaction{}
+	transactions := []Transaction{}
 
 	for rows.Next() {
-		var transaction models.Transaction
+		var transaction Transaction
 
 		err := rows.Scan(
 			&transaction.ID,
@@ -151,7 +150,7 @@ func (r *TransactionRepository) FindByAccountIDAndUserID(ctx context.Context, ac
 	return transactions, nil
 }
 
-func generateReferenceNumber() string {
+func GenerateReferenceNumber() string {
 	rand.Seed(time.Now().UnixNano())
 	return fmt.Sprintf("TXN%d%d", time.Now().UnixNano(), rand.Intn(10000))
 }

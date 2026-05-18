@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"go-banking/internal/account"
+	"go-banking/internal/auth"
 	"go-banking/internal/config"
 	"go-banking/internal/database"
-	"go-banking/internal/handlers"
+	"go-banking/internal/health"
 	"go-banking/internal/middleware"
-	"go-banking/internal/repository"
-	"go-banking/internal/services"
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
+	"go-banking/internal/transaction"
 	"log"
 	"net/http"
 
@@ -40,19 +41,19 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recovery)
 
-	accountRepo := repository.NewAccountRepository(dbPool)
-	transactionRepo := repository.NewTransactionRepository(dbPool)
-	userRepo := repository.NewUserRepository(dbPool)
+	accountRepo := account.NewAccountRepository(dbPool)
+	transactionRepo := transaction.NewTransactionRepository(dbPool)
+	userRepo := auth.NewUserRepository(dbPool)
 
-	accountService := services.NewAccountService(accountRepo, transactionRepo)
-	transactionService := services.NewTransactionService(transactionRepo)
-	authService := services.NewAuthService(userRepo)
+	accountService := account.NewAccountService(accountRepo, transactionRepo)
+	transactionService := transaction.NewTransactionService(transactionRepo)
+	authService := auth.NewAuthService(userRepo)
 
-	accountHandler := handlers.NewAccountHandler(accountService)
-	transactionHandler := handlers.NewTransactionHandler(transactionService)
-	authHandler := handlers.NewAuthHandler(authService)
+	accountHandler := account.NewAccountHandler(accountService)
+	transactionHandler := transaction.NewTransactionHandler(transactionService)
+	authHandler := auth.NewAuthHandler(authService)
 
-	router.Get("/health", handlers.HealthCheckHandler)
+	router.Get("/health", health.HealthCheckHandler)
 
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)

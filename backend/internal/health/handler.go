@@ -1,7 +1,7 @@
-package handlers
+package health
 
 import (
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
 	"net/http"
 )
 

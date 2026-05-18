@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
-	"go-banking/pkg/response"
+	"go-banking/internal/response"
 	"net/http"
 	"os"
 	"strings"
