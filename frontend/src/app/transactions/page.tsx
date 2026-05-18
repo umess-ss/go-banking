@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Container from "@/components/shared/Container";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
 import { getAccounts } from "@/services/account.service";
+import { parsePositiveAmount } from "@/lib/validation";
 import {
   deposit,
   getTransactions,
@@ -76,17 +77,32 @@ export default function TransactionsPage() {
     setError("");
     setSuccess("");
 
-    const numericAmount = Number(amount);
+    const amountResult = parsePositiveAmount(amount);
 
     if (!selectedAccountId) {
       setError("Please select an account.");
       return;
     }
 
-    if (!numericAmount || numericAmount <= 0) {
-      setError("Amount must be greater than 0.");
-      return;
-    }
+
+    if (!amountResult.valid) {
+  setError(amountResult.message);
+  return;
+}
+
+const numericAmount = amountResult.amount;
+const selectedAccount = accounts.find(
+  (account) => String(account.id) === selectedAccountId
+);
+
+if (actionType === "withdraw" && selectedAccount) {
+  const balance = Number(selectedAccount.balance || 0);
+
+  if (numericAmount > balance) {
+    setError("Withdrawal amount cannot exceed account balance.");
+    return;
+  }
+}
 
     try {
       setSubmittingAction(actionType);
@@ -114,7 +130,7 @@ export default function TransactionsPage() {
     setError("");
     setSuccess("");
 
-    const numericAmount = Number(transferAmount);
+    const amountResult = parsePositiveAmount(transferAmount);
 
     if (!fromAccountId || !toAccountId) {
       setError("Please select both source and destination accounts.");
@@ -126,10 +142,24 @@ export default function TransactionsPage() {
       return;
     }
 
-    if (!numericAmount || numericAmount <= 0) {
-      setError("Transfer amount must be greater than 0.");
-      return;
-    }
+    if (!amountResult.valid) {
+  setError(amountResult.message);
+  return;
+}
+
+const numericAmount = amountResult.amount;
+const sourceAccount = accounts.find(
+  (account) => String(account.id) === fromAccountId
+);
+
+if (sourceAccount) {
+  const balance = Number(sourceAccount.balance || 0);
+
+  if (numericAmount > balance) {
+    setError("Transfer amount cannot exceed source account balance.");
+    return;
+  }
+}
 
     try {
       setSubmittingAction("transfer");
@@ -207,6 +237,7 @@ export default function TransactionsPage() {
                 <button
                   type="submit"
                   disabled={submittingAction !== null || accounts.length === 0}
+                  
                   onClick={() => setActionType("deposit")}
                   className="w-full rounded-lg bg-black px-4 py-2 font-medium text-white disabled:opacity-60"
                 >
