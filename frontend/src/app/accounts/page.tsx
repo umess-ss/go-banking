@@ -157,7 +157,9 @@ export default function AccountsPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                     <p className="text-sm text-gray-500">Bank Account</p>
+                    <p className="text-sm capitalize text-gray-500">
+                      {account.account_type || "Bank Account"}
+                    </p>
                       <h2 className="mt-1 text-xl font-semibold">
                         {account.name || "Unnamed Account"}
                       </h2>
