@@ -2,8 +2,6 @@
 
 Go Banking is a full-stack banking dashboard built with a Go REST API, PostgreSQL, and a Next.js frontend. It supports user registration and login, JWT-protected account management, deposits, withdrawals, transfers, transaction history, and a dashboard summary.
 
-This README is the operational source of truth for running, testing, and preparing the project for production.
-
 ## Stack
 
 | Layer | Technology |
@@ -13,6 +11,16 @@ This README is the operational source of truth for running, testing, and prepari
 | Frontend | Next.js App Router, React, TypeScript, Tailwind CSS |
 | Auth | JWT access token stored by the frontend and sent as `Authorization: Bearer <token>` |
 
+## Architecture
+
+The backend is a modular monolith: one Go API process organized by domain packages.
+
+Read the backend architecture guide for package boundaries, route registration, request flow, and dependency wiring:
+
+```text
+backend/ARCHITECTURE.md
+```
+
 ## Repository Layout
 
 ```text
@@ -20,13 +28,16 @@ This README is the operational source of truth for running, testing, and prepari
 +-- backend
 |   +-- cmd/api                  # API entrypoint
 |   +-- internal
+|   |   +-- account              # Account model, repository, service, handler, routes
+|   |   +-- auth                 # Auth/user model, repository, service, handler, routes
 |   |   +-- config               # Environment loading
 |   |   +-- database             # PostgreSQL connection
-|   |   +-- handlers             # HTTP handlers
+|   |   +-- health               # Health and readiness checks
+|   |   +-- logger               # slog logger setup
 |   |   +-- middleware           # Auth, CORS, logging, recovery
-|   |   +-- models               # Request/response/domain structs
-|   |   +-- repository           # Database access
-|   |   +-- services             # Business logic
+|   |   +-- response             # Shared JSON response helpers
+|   |   +-- transaction          # Transaction model, repository, service, handler, routes
+|   +-- ARCHITECTURE.md          # Backend architecture notes
 |   +-- migrations               # Goose SQL migrations
 |   +-- Makefile
 +-- frontend
@@ -75,13 +86,6 @@ PORT=8080
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/go_banking_api?sslmode=disable
 JWT_SECRET=replace_with_a_long_random_secret
 ```
-
-Production requirements:
-
-- Use a strong `JWT_SECRET`, at least 32 random bytes.
-- Use a least-privilege PostgreSQL user.
-- Use SSL for remote PostgreSQL connections.
-- Do not commit real `.env` files.
 
 ### Frontend
 
@@ -132,6 +136,7 @@ Health check:
 
 ```bash
 curl http://localhost:8080/health
+curl http://localhost:8080/ready
 ```
 
 ### 4. Start the Frontend
@@ -202,7 +207,8 @@ Authorization: Bearer <access_token>
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/health` | API health check |
+| `GET` | `/health` | Liveness check |
+| `GET` | `/ready` | Readiness check with database ping |
 | `POST` | `/auth/register` | Register a user |
 | `POST` | `/auth/login` | Login and receive an access token |
 
