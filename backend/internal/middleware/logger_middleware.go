@@ -1,20 +1,12 @@
 package middleware
 
 import (
-	"go-banking/internal/response"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
+
+	"go-banking/internal/response"
 )
-
-//middlware is used to log the incoming requests and the time taken to process them.
-//It wraps the http.ResponseWriter to capture the status code of the response and logs the
-//HTTP method, request path, status code, and duration of the request processing. This helps
-//in monitoring and debugging the API by providing insights into the performance and any
-//potential issues with the requests being handled by the server.
-
-//In simple words, this middleware acts acts as a logger for all incoming HTTP requests,
-//recording the method, path, status code, and how long it took to process each request.
 
 type responseWriter struct {
 	http.ResponseWriter
@@ -22,7 +14,10 @@ type responseWriter struct {
 }
 
 func newResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{w, http.StatusOK}
+	return &responseWriter{
+		ResponseWriter: w,
+		statusCode:     http.StatusOK,
+	}
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
@@ -37,8 +32,15 @@ func Logger(next http.Handler) http.Handler {
 
 		next.ServeHTTP(wrappedWriter, r)
 
-		duration := time.Since(startTime)
-		log.Printf("%s %s %d %s", r.Method, r.URL.Path, wrappedWriter.statusCode, duration)
+		slog.Info(
+			"http request completed",
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.Int("status", wrappedWriter.statusCode),
+			slog.Duration("duration", time.Since(startTime)),
+			slog.String("remote_addr", r.RemoteAddr),
+			slog.String("user_agent", r.UserAgent()),
+		)
 	})
 }
 
@@ -46,10 +48,17 @@ func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("panic: %v", err)
+				slog.Error(
+					"panic recovered",
+					slog.Any("error", err),
+					slog.String("method", r.Method),
+					slog.String("path", r.URL.Path),
+				)
+
 				response.WriteError(w, http.StatusInternalServerError, "internal server error")
 			}
 		}()
+
 		next.ServeHTTP(w, r)
 	})
 }
