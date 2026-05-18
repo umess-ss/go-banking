@@ -1,32 +1,34 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
+	"net/http"
+
 	"go-banking/internal/account"
 	"go-banking/internal/auth"
 	"go-banking/internal/config"
 	"go-banking/internal/database"
 	"go-banking/internal/health"
+	"go-banking/internal/logger"
 	"go-banking/internal/middleware"
 	"go-banking/internal/response"
 	"go-banking/internal/transaction"
-	"log"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-
 	cfg := config.Load()
+	log := logger.New(cfg.AppEnv)
 
 	dbPool, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Error("failed to connect to database", slog.String("error", err.Error()))
+		return
 	}
 	defer dbPool.Close()
 
-	fmt.Println("Connected to database successfully")
+	log.Info("connected to database successfully")
 
 	router := chi.NewRouter()
 
@@ -60,11 +62,16 @@ func main() {
 
 	port := ":" + cfg.Port
 
-	fmt.Println("Go Banking API started on port", port)
+	log.Info(
+		"server starting",
+		slog.String("port", cfg.Port),
+		slog.String("env", cfg.AppEnv),
+	)
 
 	handler := middleware.CORS(router)
+
 	err = http.ListenAndServe(port, handler)
 	if err != nil {
-		log.Fatalf("failed to start server: %v", err)
+		log.Error("failed to start server", slog.String("error", err.Error()))
 	}
 }
