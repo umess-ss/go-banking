@@ -1,9 +1,15 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/joho/godotenv"
+)
+
+var (
+	ErrMissingDatabaseURL = errors.New("DATABASE_URL is required")
+	ErrMissingJWTSecret   = errors.New("JWT_SECRET is required")
 )
 
 type Config struct {
@@ -31,4 +37,16 @@ func getEnv(key string, fallback string) string {
 	}
 
 	return value
+}
+
+func (c Config) Validate() error {
+	if c.DatabaseURL == "" {
+		return ErrMissingDatabaseURL
+	}
+
+	if c.JWTSecret == "" {
+		return ErrMissingJWTSecret
+	}
+
+	return nil
 }

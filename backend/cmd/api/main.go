@@ -21,6 +21,11 @@ func main() {
 	cfg := config.Load()
 	log := logger.New(cfg.AppEnv)
 
+	if err := cfg.Validate(); err != nil {
+		log.Error("invalid configuration", slog.String("error", err.Error()))
+		return
+	}
+
 	dbPool, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Error("failed to connect to database", slog.String("error", err.Error()))
@@ -54,8 +59,9 @@ func main() {
 	accountHandler := account.NewAccountHandler(accountService)
 	transactionHandler := transaction.NewTransactionHandler(transactionService)
 	authHandler := auth.NewAuthHandler(authService)
+	healthHandler := health.NewHandler(dbPool)
 
-	health.RegisterRoutes(router)
+	health.RegisterRoutes(router, healthHandler)
 	auth.RegisterRoutes(router, authHandler)
 	account.RegisterRoutes(router, accountHandler, transactionHandler)
 	transaction.RegisterRoutes(router, transactionHandler)
