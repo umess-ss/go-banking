@@ -7,6 +7,7 @@ import { getAccounts } from "@/services/account.service";
 import {
   deposit,
   getTransactions,
+  transfer,
   withdraw,
 } from "@/services/transaction.service";
 import type { Account } from "@/types/account";
@@ -22,9 +23,13 @@ export default function TransactionsPage() {
     "deposit"
   );
 
+  const [fromAccountId, setFromAccountId] = useState("");
+  const [toAccountId, setToAccountId] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [submittingAction, setSubmittingAction] = useState<
-    "deposit" | "withdraw" | null
+    "deposit" | "withdraw" | "transfer" | null
   >(null);
 
   const [error, setError] = useState("");
@@ -44,6 +49,14 @@ export default function TransactionsPage() {
 
       if (!selectedAccountId && accountsData.length > 0) {
         setSelectedAccountId(String(accountsData[0].id));
+      }
+
+      if (!fromAccountId && accountsData.length > 0) {
+        setFromAccountId(String(accountsData[0].id));
+      }
+
+      if (!toAccountId && accountsData.length > 1) {
+        setToAccountId(String(accountsData[1].id));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
@@ -76,20 +89,58 @@ export default function TransactionsPage() {
     }
 
     try {
-        setSubmittingAction(actionType);
+      setSubmittingAction(actionType);
 
-        if (actionType === "deposit") {
-          await deposit(Number(selectedAccountId), numericAmount);
-          setSuccess("Deposit completed successfully.");
-        } else {
-          await withdraw(Number(selectedAccountId), numericAmount);
-          setSuccess("Withdrawal completed successfully.");
-        }
+      if (actionType === "deposit") {
+        await deposit(Number(selectedAccountId), numericAmount);
+        setSuccess("Deposit completed successfully.");
+      } else {
+        await withdraw(Number(selectedAccountId), numericAmount);
+        setSuccess("Withdrawal completed successfully.");
+      }
 
       setAmount("");
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : `${actionType} failed`);
+    } finally {
+      setSubmittingAction(null);
+    }
+  }
+
+  async function handleTransfer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    const numericAmount = Number(transferAmount);
+
+    if (!fromAccountId || !toAccountId) {
+      setError("Please select both source and destination accounts.");
+      return;
+    }
+
+    if (fromAccountId === toAccountId) {
+      setError("Source and destination accounts cannot be the same.");
+      return;
+    }
+
+    if (!numericAmount || numericAmount <= 0) {
+      setError("Transfer amount must be greater than 0.");
+      return;
+    }
+
+    try {
+      setSubmittingAction("transfer");
+
+      await transfer(Number(fromAccountId), Number(toAccountId), numericAmount);
+
+      setSuccess("Transfer completed successfully.");
+      setTransferAmount("");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Transfer failed");
     } finally {
       setSubmittingAction(null);
     }
@@ -102,12 +153,13 @@ export default function TransactionsPage() {
           <div className="rounded-2xl border bg-white p-8 shadow-sm">
             <h1 className="text-3xl font-bold">Transactions</h1>
             <p className="mt-2 text-gray-600">
-              Deposit, withdraw, and view your transaction history.
+              Deposit, withdraw, transfer money, and view your transaction
+              history.
             </p>
           </div>
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">Money Actions</h2>
+            <h2 className="text-xl font-semibold">Deposit / Withdraw</h2>
             <p className="mt-1 text-sm text-gray-600">
               Choose an account and enter an amount.
             </p>
@@ -173,13 +225,92 @@ export default function TransactionsPage() {
                 </button>
               </div>
             </form>
-
-            {success && (
-              <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-                {success}
-              </p>
-            )}
           </div>
+
+          <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">Transfer Money</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Move money between your own accounts.
+            </p>
+
+            <form
+              onSubmit={handleTransfer}
+              className="mt-5 grid gap-4 md:grid-cols-4"
+            >
+              <div>
+                <label className="text-sm font-medium">From Account</label>
+                <select
+                  value={fromAccountId}
+                  onChange={(event) => setFromAccountId(event.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                  required
+                >
+                  {accounts.length === 0 ? (
+                    <option value="">No accounts found</option>
+                  ) : (
+                    accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} — NPR{" "}
+                        {Number(account.balance || 0).toLocaleString()}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">To Account</label>
+                <select
+                  value={toAccountId}
+                  onChange={(event) => setToAccountId(event.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                  required
+                >
+                  {accounts.length === 0 ? (
+                    <option value="">No accounts found</option>
+                  ) : (
+                    accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} — {account.account_number}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Amount</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={transferAmount}
+                  onChange={(event) => setTransferAmount(event.target.value)}
+                  placeholder="500"
+                  className="mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                  required
+                />
+              </div>
+
+              <div className="flex md:items-end">
+                <button
+                  type="submit"
+                  disabled={submittingAction !== null || accounts.length < 2}
+                  className="w-full rounded-lg bg-black px-4 py-2 font-medium text-white disabled:opacity-60"
+                >
+                  {submittingAction === "transfer"
+                    ? "Transferring..."
+                    : "Transfer"}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {success && (
+            <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+              {success}
+            </p>
+          )}
 
           {loading && (
             <div className="rounded-2xl border bg-white p-6 shadow-sm">

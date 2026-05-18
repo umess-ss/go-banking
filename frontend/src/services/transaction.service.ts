@@ -56,3 +56,22 @@ export async function withdraw(accountId: number, amount: number) {
 
   return response.data || response.transaction;
 }
+
+
+export async function transfer(
+  fromAccountId: number,
+  toAccountId: number,
+  amount: number
+) {
+  const response = await apiFetch<TransactionResponse>("/transfer", {
+    method: "POST",
+    body: JSON.stringify({
+      from_account_id: fromAccountId,
+      to_account_id: toAccountId,
+      amount,
+    }),
+    auth: true,
+  });
+
+  return response.data || response.transaction;
+}
