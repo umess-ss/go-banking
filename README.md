@@ -210,9 +210,9 @@ Register payload:
 
 ```json
 {
-  "name": "Prativa Kunwar",
-  "email": "prativa@gmail.com",
-  "password": "prativa@123"
+  "name": "Example User",
+  "email": "user@email.com",
+  "password": "password123"
 }
 ```
 
@@ -220,8 +220,8 @@ Login payload:
 
 ```json
 {
-  "email": "prativa@gmail.com",
-  "password": "prativa@123"
+  "email": "user@email.com",
+  "password": "password123"
 }
 ```
 
@@ -232,8 +232,8 @@ Login response data:
   "access_token": "jwt_token",
   "user": {
     "id": 1,
-    "name": "Prativa Kunwar",
-    "email": "prativa@gmail.com",
+    "name": "Example User",
+    "email": "user@email.com",
     "created_at": "2026-05-18T00:00:00Z"
   }
 }
