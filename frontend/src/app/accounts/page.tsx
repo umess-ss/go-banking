@@ -176,7 +176,7 @@ export default function AccountsPage() {
                   </div>
 
                   <p className="mt-6 text-3xl font-bold">
-                    {(account.balance || 0).toLocaleString()}
+                    {account.currency} {Number(account.balance || 0).toLocaleString()}
                   </p>
                 </Link>
               ))}

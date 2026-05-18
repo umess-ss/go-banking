@@ -1,25 +1,28 @@
-import React from "react";
+import type { ButtonHTMLAttributes } from "react";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary";
+type ButtonVariant = "primary" | "secondary" | "danger";
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
 };
 
 export default function Button({
   children,
-  variant = "primary",
   className = "",
+  variant = "primary",
   ...props
 }: ButtonProps) {
-  const base =
-    "rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed";
-
-  const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
+  const variants: Record<ButtonVariant, string> = {
+    primary: "bg-black text-white hover:bg-gray-800",
+    secondary: "border bg-white text-black hover:bg-gray-50",
+    danger: "bg-red-600 text-white hover:bg-red-700",
   };
 
   return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
+    <button
+      className={`rounded-lg px-4 py-2 font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
+      {...props}
+    >
       {children}
     </button>
   );
