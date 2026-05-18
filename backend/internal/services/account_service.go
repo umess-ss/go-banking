@@ -36,6 +36,14 @@ func (s *AccountService) CreateAccount(ctx context.Context, userID int64, accoun
 		return nil, errors.New("account name is required")
 	}
 
+	if account.AccountType == "" {
+		account.AccountType = "savings"
+	}
+
+	if account.AccountType != "savings" && account.AccountType != "checking" && account.AccountType != "current" {
+		return nil, errors.New("invalid account type")
+	}
+
 	if account.Balance < 0 {
 		return nil, errors.New("initial balance cannot be negative")
 	}

@@ -28,7 +28,7 @@ func NewAccountRepository(db *pgxpool.Pool) *AccountRepository {
 
 func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) ([]models.Account, error) {
 	query := `
-		SELECT id, user_id, name, account_number, balance, currency, created_at, updated_at
+		SELECT id, user_id, name, account_number, account_type, balance, currency, created_at, updated_at
 		FROM accounts
 		WHERE user_id = $1
 		ORDER BY id DESC
@@ -48,6 +48,7 @@ func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) (
 			&account.UserID,
 			&account.Name,
 			&account.AccountNumber,
+			&account.AccountType,
 			&account.Balance,
 			&account.Currency,
 			&account.CreatedAt,
@@ -67,7 +68,7 @@ func (r *AccountRepository) FindAllByUserID(ctx context.Context, userID int64) (
 
 func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int64, userID int64) (*models.Account, error) {
 	query := `
-		SELECT id, user_id, name, account_number, balance, currency, created_at, updated_at
+		SELECT id, user_id, name, account_number, account_type, balance, currency, created_at, updated_at
 		FROM accounts
 		WHERE id = $1 AND user_id = $2
 	`
@@ -79,6 +80,7 @@ func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int
 		&account.UserID,
 		&account.Name,
 		&account.AccountNumber,
+		&account.AccountType,
 		&account.Balance,
 		&account.Currency,
 		&account.CreatedAt,
@@ -93,9 +95,9 @@ func (r *AccountRepository) FindByIDAndUserID(ctx context.Context, accountID int
 
 func (r *AccountRepository) Create(ctx context.Context, account models.Account) (*models.Account, error) {
 	query := `
-		INSERT INTO accounts (user_id, name, account_number, balance, currency)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, created_at, updated_at
+		INSERT INTO accounts (user_id, name, account_number, account_type, balance, currency)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, user_id, name, account_number, account_type, balance, currency, created_at, updated_at
 	`
 
 	accountNumber := generateAccountNumber() // Implement this function to generate unique account numbers
@@ -104,16 +106,27 @@ func (r *AccountRepository) Create(ctx context.Context, account models.Account) 
 		account.Currency = "NPR"
 	}
 
+	if account.AccountType == "" {
+		account.AccountType = "savings"
+	}
+
 	err := r.db.QueryRow(
 		ctx,
 		query,
 		account.UserID,
 		account.Name,
 		accountNumber,
+		account.AccountType,
 		account.Balance,
 		account.Currency,
 	).Scan(
 		&account.ID,
+		&account.UserID,
+		&account.Name,
+		&account.AccountNumber,
+		&account.AccountType,
+		&account.Balance,
+		&account.Currency,
 		&account.CreatedAt,
 		&account.UpdatedAt,
 	)
