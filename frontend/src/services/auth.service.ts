@@ -1,5 +1,10 @@
 import { apiFetch } from "./api";
-import type { AuthResponse, LoginPayload, RegisterPayload } from "@/types/auth";
+import type {
+  AuthResponse,
+  AuthUser,
+  LoginPayload,
+  RegisterPayload,
+} from "@/types/auth";
 
 export function registerUser(payload: RegisterPayload) {
   return apiFetch<AuthResponse>("/auth/register", {
@@ -15,4 +20,12 @@ export function loginUser(payload: LoginPayload) {
     body: JSON.stringify(payload),
     auth: false,
   });
+}
+
+export function getCurrentUser() {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: AuthUser;
+  }>("/auth/me");
 }

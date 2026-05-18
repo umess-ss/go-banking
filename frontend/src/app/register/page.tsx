@@ -1,9 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+
 import { useRouter } from "next/navigation";
 import Container from "@/components/shared/Container";
 import { registerUser } from "@/services/auth.service";
+import { FormEvent, useEffect, useState } from "react";
+import { getToken } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,7 +16,11 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  useEffect(() => {
+  if (getToken()) {
+    router.replace("/dashboard");
+  }
+}, [router]);
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");

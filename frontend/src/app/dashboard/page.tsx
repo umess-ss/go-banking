@@ -8,10 +8,14 @@ import { getAccounts } from "@/services/account.service";
 import { getTransactions } from "@/services/transaction.service";
 import type { Account } from "@/types/account";
 import type { Transaction } from "@/types/transaction";
+import { getAuthUser, setAuthUser } from "@/lib/auth";
+import type { AuthUser } from "@/types/auth";
+import { getCurrentUser } from "@/services/auth.service";
 
 export default function DashboardPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,14 +24,22 @@ export default function DashboardPage() {
     async function loadDashboard() {
       try {
         setError("");
+        const cachedUser = getAuthUser();
+        setUser(cachedUser);
 
-        const [accountsData, transactionsData] = await Promise.all([
+        const [accountsData, transactionsData, currentUserData] = await Promise.all([
           getAccounts(),
           getTransactions(),
+          cachedUser ? Promise.resolve(null) : getCurrentUser(),
         ]);
 
         setAccounts(accountsData);
         setTransactions(transactionsData);
+
+        if (currentUserData?.data) {
+          setAuthUser(currentUserData.data);
+          setUser(currentUserData.data);
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load dashboard"
@@ -37,7 +49,9 @@ export default function DashboardPage() {
       }
     }
 
-    loadDashboard();
+    queueMicrotask(() => {
+      void loadDashboard();
+    });
   }, []);
 
   const totalBalance = useMemo(() => {
@@ -85,7 +99,9 @@ export default function DashboardPage() {
       <Container>
         <div className="space-y-6">
           <div className="rounded-2xl border bg-white p-8 shadow-sm">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-3xl font-bold">
+              {user?.name ? `Welcome, ${user.name}` : "Welcome"}
+            </h1>
             <p className="mt-2 text-gray-600">
               Overview of your banking accounts, balances, and transactions.
             </p>

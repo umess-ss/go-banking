@@ -1,10 +1,10 @@
 "use client";
-import { setToken } from "@/lib/auth";
 
-import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/shared/Container";
 import { loginUser } from "@/services/auth.service";
+import { FormEvent, useEffect, useState } from "react";
+import { clearAuth, getAuthUser, getToken, setAuthUser, setToken } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +14,20 @@ export default function LoginPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = getToken();
+    const user = getAuthUser();
+
+    if (token && user) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    if (token && !user) {
+      clearAuth();
+    }
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,6 +41,10 @@ export default function LoginPage() {
 
       if (token) {
         setToken(token);
+      }
+
+      if (data.data.user) {
+        setAuthUser(data.data.user);
       }
 
       router.push("/dashboard");

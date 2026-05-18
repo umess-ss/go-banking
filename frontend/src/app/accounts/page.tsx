@@ -31,7 +31,9 @@ export default function AccountsPage() {
   }
 
   useEffect(() => {
-    loadAccounts();
+    queueMicrotask(() => {
+      void loadAccounts();
+    });
   }, []);
 
   async function handleCreateAccount(event: FormEvent<HTMLFormElement>) {

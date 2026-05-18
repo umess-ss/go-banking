@@ -67,7 +67,9 @@ export default function TransactionsPage() {
   }
 
   useEffect(() => {
-    loadData();
+    queueMicrotask(() => {
+      void loadData();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -106,6 +106,20 @@ func (s *AuthService) Login(ctx context.Context, request models.LoginRequest) (m
 	}, nil
 }
 
+func (s *AuthService) GetCurrentUser(ctx context.Context, userID int64) (models.UserResponse, error) {
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return models.UserResponse{}, errors.New("user not found")
+	}
+
+	return models.UserResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
+}
+
 func (s *AuthService) GenerateJWT(userID int64, email string) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {

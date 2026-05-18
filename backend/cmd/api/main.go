@@ -69,6 +69,7 @@ func main() {
 
 		r.Post("/transfer", accountHandler.Transfer)
 		r.Get("/transactions", transactionHandler.GetTransactions)
+		r.Get("/auth/me", authHandler.Me)
 
 	})
 

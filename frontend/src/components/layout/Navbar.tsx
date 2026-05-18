@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getToken, removeToken } from "@/lib/auth";
+import { clearAuth, getToken } from "@/lib/auth";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -14,14 +14,17 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    setLoggedIn(Boolean(getToken()));
+    queueMicrotask(() => {
+      setLoggedIn(Boolean(getToken()));
+    });
   }, [pathname]);
 
   function handleLogout() {
-    removeToken();
+    clearAuth();
     setLoggedIn(false);
     router.push("/login");
   }
@@ -29,7 +32,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight">
+        <Link href={loggedIn ? "/dashboard" : "/"} className="text-lg font-bold tracking-tight">
           Go Banking
         </Link>
 
@@ -46,9 +49,7 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={`relative font-medium transition ${
-                      active
-                        ? "text-black"
-                        : "text-gray-500 hover:text-black"
+                      active ? "text-black" : "text-gray-500 hover:text-black"
                     }`}
                   >
                     {link.label}

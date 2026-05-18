@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"go-banking/internal/middleware"
 	"net/http"
 
 	"go-banking/internal/models"
@@ -53,4 +54,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.WriteJSON(w, http.StatusOK, true, "login successful", result)
+}
+
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	user, err := h.service.GetCurrentUser(r.Context(), userID)
+	if err != nil {
+		response.WriteError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, true, "current user fetched successfully", user)
 }

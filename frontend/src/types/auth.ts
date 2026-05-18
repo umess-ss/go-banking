@@ -10,7 +10,7 @@ export type LoginPayload = {
 };
 
 export type AuthUser = {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
 };

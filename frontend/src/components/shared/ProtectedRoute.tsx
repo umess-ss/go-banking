@@ -13,14 +13,16 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
+    queueMicrotask(() => {
+      const token = getToken();
 
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
 
-    setChecking(false);
+      setChecking(false);
+    });
   }, [router]);
 
   if (checking) {
