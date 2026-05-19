@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: banking-api
-          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/go-banking-api:latest
+          image: 348362971250.dkr.ecr.us-east-1.amazonaws.com/go-banking-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
