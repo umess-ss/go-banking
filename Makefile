@@ -99,3 +99,37 @@ k8s-ingress-status:
 	kubectl get pods -n ingress-nginx
 	kubectl get svc -n ingress-nginx
 	kubectl get ingress -n go-banking
+
+
+
+
+AWS_REGION=us-east-1
+AWS_ACCOUNT_ID=YOUR_AWS_ACCOUNT_ID
+ECR_REPO=go-banking-api
+ECR_IMAGE=$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO):latest
+
+.PHONY: aws-ecr-login
+aws-ecr-login:
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+
+.PHONY: aws-docker-build
+aws-docker-build:
+	cd backend && docker build -t $(ECR_REPO):latest .
+	docker tag $(ECR_REPO):latest $(ECR_IMAGE)
+
+.PHONY: aws-docker-push
+aws-docker-push:
+	docker push $(ECR_IMAGE)
+
+.PHONY: aws-k8s-apply
+aws-k8s-apply:
+	kubectl apply -f k8s/aws/namespace.yaml
+	kubectl apply -f k8s/aws/configmap.yaml
+	kubectl apply -f k8s/aws/secret.yaml
+	kubectl apply -f k8s/aws/backend.yaml
+	kubectl apply -f k8s/aws/ingress.yaml
+
+.PHONY: aws-k8s-migrate
+aws-k8s-migrate:
+	kubectl delete job banking-migration -n go-banking --ignore-not-found=true
+	kubectl apply -f k8s/aws/migration-job.yaml

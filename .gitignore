@@ -5,4 +5,4 @@ tmp/
 *.log
 .agent
 .codex
-
+k8s/aws/secret.yaml
