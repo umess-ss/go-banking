@@ -14,3 +14,19 @@ migrate-status:
 
 test:
 	go test ./...   
+
+docker-up:
+	docker compose up --build
+
+docker-down:
+	docker compose down
+
+docker-reset:
+	docker compose down -v
+	docker compose up --build
+
+docker-logs:
+	docker compose logs -f backend
+
+docker-ps:
+	docker compose ps
