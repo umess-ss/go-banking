@@ -1,19 +1,32 @@
-DB_URL=postgres://postgres:postgres@localhost:5432/go_banking_api?sslmode=disable
+DB_URL_LOCAL=postgres://postgres:postgres@localhost:5432/go_banking?sslmode=disable
+DB_URL_DOCKER=postgres://postgres:postgres@localhost:5433/go_banking?sslmode=disable
 
 run:
 	go run ./cmd/api
 
+test:
+	go test ./...
+
 migrate-up:
-	goose -dir migrations postgres "$(DB_URL)" up
+	migrate -path migrations -database "$(DB_URL_LOCAL)" up
 
 migrate-down:
-	goose -dir migrations postgres "$(DB_URL)" down
+	migrate -path migrations -database "$(DB_URL_LOCAL)" down 1
 
-migrate-status:
-	goose -dir migrations postgres "$(DB_URL)" status
+migrate-force:
+	migrate -path migrations -database "$(DB_URL_LOCAL)" force $(VERSION)
 
-test:
-	go test ./...   
+migrate-version:
+	migrate -path migrations -database "$(DB_URL_LOCAL)" version
+
+migrate-up-docker:
+	migrate -path migrations -database "$(DB_URL_DOCKER)" up
+
+migrate-down-docker:
+	migrate -path migrations -database "$(DB_URL_DOCKER)" down 1
+
+migrate-version-docker:
+	migrate -path migrations -database "$(DB_URL_DOCKER)" version
 
 docker-up:
 	docker compose up --build
