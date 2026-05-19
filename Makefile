@@ -80,3 +80,22 @@ k8s-forward-db:
 .PHONY: k8s-clean
 k8s-clean:
 	kubectl delete namespace $(NAMESPACE) --ignore-not-found=true
+
+.PHONY: k8s-ingress-install
+k8s-ingress-install:
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+
+.PHONY: k8s-ingress-apply
+k8s-ingress-apply:
+	kubectl apply -f k8s/local/ingress.yaml
+
+.PHONY: k8s-forward-ingress
+k8s-forward-ingress:
+	kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8081:80
+
+.PHONY: k8s-ingress-status
+k8s-ingress-status:
+	kubectl get pods -n ingress-nginx
+	kubectl get svc -n ingress-nginx
+	kubectl get ingress -n go-banking
