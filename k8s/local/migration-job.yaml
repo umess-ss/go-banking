@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: banking-migration
+  namespace: go-banking
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: go-banking-api:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              ./goose -dir ./migrations postgres "$DATABASE_URL" up
+          envFrom:
+            - secretRef:
+                name: banking-secret
